@@ -1,12 +1,14 @@
 'use strict';
 
-var amount  = flw_payment_args.amount;
-var cbUrl   = flw_payment_args.cb_url;
-var email   = flw_payment_args.email;
-var form    = jQuery( '#flw-pay-now-button' );
-var p_key   = flw_payment_args.p_key;
-var txref   = flw_payment_args.txnref;
-var redirect_url;
+var amount = flw_payment_args.amount,
+    cbUrl  = flw_payment_args.cb_url,
+    desc   = flw_payment_args.desc,
+    email  = flw_payment_args.email,
+    form   = jQuery( '#flw-pay-now-button' ),
+    p_key  = flw_payment_args.p_key,
+    title  = flw_payment_args.title,
+    txref  = flw_payment_args.txnref,
+    redirect_url;
 
 if ( form ) {
 
@@ -20,12 +22,16 @@ if ( form ) {
 var processPayment = function() {
 
   getpaidSetup({
-    customer_email: email,
     amount: amount,
+    custom_description: desc,
+    custom_title: title,
+    customer_email: email,
     txref: txref,
     PBFPubKey: p_key,
     onclose: function(){
-      location.href = redirect_url;
+      if (redirect_url) {
+        location.href = redirect_url;
+      }
     },
     callback: function(d){
       sendPaymentRequestResponse( d );

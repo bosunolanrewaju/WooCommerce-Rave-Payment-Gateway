@@ -83,7 +83,19 @@ function flw_woocommerce_flutterwave_init() {
         'public_key' => array(
           'title'       => __( 'Integration Public Key', 'flw-payments' ),
           'type'        => 'text',
-          'description' => __( 'Enter your Public Key here', 'flw-payments' ),
+          'description' => __( 'Required! Enter your integration public key here', 'flw-payments' ),
+          'default'     => ''
+        ),
+        'modal_title' => array(
+          'title'       => __( 'Modal Title', 'flw-payments' ),
+          'type'        => 'text',
+          'description' => __( 'Optional - The title of the payment modal (default: FLW PAY)', 'flw-payments' ),
+          'default'     => ''
+        ),
+        'modal_description' => array(
+          'title'       => __( 'Modal Description', 'flw-payments' ),
+          'type'        => 'text',
+          'description' => __( 'Optional - The description of the payment modal (default: FLW PAY MODAL)', 'flw-payments' ),
           'default'     => ''
         ),
 
@@ -177,10 +189,12 @@ function flw_woocommerce_flutterwave_init() {
 
         if ( $order->order_key == $order_key ) {
 
-          $payment_args['email']   = $email;
-          $payment_args['amount']  = $amount;
-          $payment_args['txnref']  = $txnref;
-          $payment_args['cb_url']  = WC()->api_request_url( 'FLW_WC_Payment_Gateway' );
+          $payment_args['amount'] = $amount;
+          $payment_args['cb_url'] = WC()->api_request_url( 'FLW_WC_Payment_Gateway' );
+          $payment_args['desc']   = $this->get_option( 'modal_description' );
+          $payment_args['email']  = $email;
+          $payment_args['txnref'] = $txnref;
+          $payment_args['title']  = $this->get_option( 'modal_title' );
 
         }
 
@@ -198,25 +212,26 @@ function flw_woocommerce_flutterwave_init() {
      * @return void
      */
     public function flw_verify_payment() {
-      if ( isset( $_POST['flwRef'] ) ) {
+      if ( isset( $_POST['txRef'] ) ) {
         $response_code = ( $_POST['paymentType'] === 'account' ) ? $_POST['acctvalrespcode'] : $_POST['vbvrespcode'];
-          $txn_ref = $_POST['flwRef'];
+          $txn_ref = $_POST['txRef'];
           $order_id = intval( explode( '_', $txn_ref )[0] );
           $order = wc_get_order( $order_id );
+          $order_currency = $order->get_order_currency();
 
         if ( $response_code == '00' ) {
 
           $order_amount = $order->get_total();
           $charged_amount  = $_POST['charged_amount'];
 
-          if ( $charged_amount != $order_amount ) {
+          if ( $charged_amount != $order_amount-1 ) {
 
             $order->update_status( 'on-hold' );
             $customer_note  = 'Thank you for your order.<br>';
             $customer_note .= 'Your payment successfully went through, but we have to put your order <strong>on-hold</strong> ';
             $customer_note .= 'because the amount received is different from the total amount of your order. Please, contact us for information regarding this order.';
             $admin_note     = 'Attention: New order has been placed on hold because of incorrect payment amount. Please, look into it. <br>';
-            $admin_note    .= "Amount paid: $charged_amount <br> Order amount: $order_amount <br> Reference: $txn_ref";
+            $admin_note    .= "Amount paid: $order_currency $charged_amount <br> Order amount: $order_currency $order_amount <br> Reference: $txn_ref";
 
             $order->add_order_note( $customer_note, 1 );
             $order->add_order_note( $admin_note );
