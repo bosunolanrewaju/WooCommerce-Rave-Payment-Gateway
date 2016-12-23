@@ -2,13 +2,18 @@
 /*
 Plugin Name: WooCommerce Flutterwave Express Checkout Gateway
 Plugin URI: http://flutterwave.com/
-Description: A payment gateway for Flutterwave Express Checkout.
+Description: WooCommerce payment gateway for Flutterwave Express Checkout.
 Version: 0.0.1
 Author: Bosun Olanrewaju
 Author URI: http://twitter.com/bosunolanrewaju
   Copyright: © 2016 Bosun Olanrewaju.
   License: MIT License
 */
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+  exit;
+}
 
 define( 'FLW_PLUGIN_FILE', __FILE__ );
 
@@ -42,13 +47,14 @@ function flw_woocommerce_flutterwave_init() {
       $this->init_form_fields();
       $this->init_settings();
 
-      $this->title        = __( 'Bank Account or Credit/Debit Cards', 'flw-payments' );
+      $this->title        = __( 'Debit Card / Credit Card / Bank Account', 'flw-payments' );
       $this->description  = __( 'Pay with your bank account or credit/debit card', 'flw-payments' );
       $this->enabled      = $this->get_option( 'enabled' );
       $this->public_key   = $this->get_option( 'public_key' );
 
       add_action( 'admin_notices', array( $this, 'admin_notices' ) );
-      add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
+      add_action( 'woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
+      add_action( 'woocommerce_api_flw_wc_payment_gateway', array( $this, 'flw_verify_payment' ) );
 
       if ( is_admin() ) {
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -137,12 +143,10 @@ function flw_woocommerce_flutterwave_init() {
 
       $order = wc_get_order( $order );
 
-      echo '<p>'.__('Thank you for your order, please click the button below to pay with Flutterwave Express Checkout.', 'mrova').'</p>';
-      echo '<script type="text/javascript" src="https://flutterv3.herokuapp.com/flwv3-pug/getpaid/api/flwpbf-inline.js"></script>';
-
+      echo '<p>'.__( 'Thank you for your order, please click the button below to pay with Flutterwave Express Checkout.', 'flw-payments' ).'</p>';
       echo '<button class="button alt" id="flw-pay-now-button">Pay Now</button> ';
-      echo ' <a class="button cancel" href="' . esc_url( $order->get_cancel_order_url() ) . '">';
-      echo __('Cancel order &amp; restore cart', 'flw-payments') . '</a>';
+      echo '<a class="button cancel" href="' . esc_url( $order->get_cancel_order_url() ) . '">';
+      echo __( 'Cancel order &amp; restore cart', 'flw-payments' ) . '</a>';
 
     }
 
@@ -156,7 +160,7 @@ function flw_woocommerce_flutterwave_init() {
       if ( ! is_checkout_pay_page() ) return;
 
       wp_enqueue_script( 'flwpbf_inline_js', 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com/flwv3-pug/getpaid/api/flwpbf-inline.js', array(), '1.0.0', true );
-      wp_enqueue_script( 'flw_js', plugins_url( 'assets/js/flw.js', FLW_PLUGIN_FILE ), array('flwpbf_inline_js'), '1.0.0', true );
+      wp_enqueue_script( 'flw_js', plugins_url( 'assets/js/flw.js', FLW_PLUGIN_FILE ), array( 'flwpbf_inline_js' ), '1.0.0', true );
 
       $payment_args = array(
         'p_key' => $this->public_key
@@ -176,6 +180,7 @@ function flw_woocommerce_flutterwave_init() {
           $payment_args['email']   = $email;
           $payment_args['amount']  = $amount;
           $payment_args['txnref']  = $txnref;
+          $payment_args['cb_url']  = WC()->api_request_url( 'FLW_WC_Payment_Gateway' );
 
         }
 
@@ -185,6 +190,58 @@ function flw_woocommerce_flutterwave_init() {
 
       wp_localize_script( 'flw_js', 'flw_payment_args', $payment_args );
 
+    }
+
+    /**
+     * Verify payment made on the checkout page
+     *
+     * @return void
+     */
+    public function flw_verify_payment() {
+      if ( isset( $_POST['flwRef'] ) ) {
+        $response_code = ( $_POST['paymentType'] === 'account' ) ? $_POST['acctvalrespcode'] : $_POST['vbvrespcode'];
+          $txn_ref = $_POST['flwRef'];
+          $order_id = intval( explode( '_', $txn_ref )[0] );
+          $order = wc_get_order( $order_id );
+
+        if ( $response_code == '00' ) {
+
+          $order_amount = $order->get_total();
+          $charged_amount  = $_POST['charged_amount'];
+
+          if ( $charged_amount != $order_amount ) {
+
+            $order->update_status( 'on-hold' );
+            $customer_note  = 'Thank you for your order.<br>';
+            $customer_note .= 'Your payment successfully went through, but we have to put your order <strong>on-hold</strong> ';
+            $customer_note .= 'because the amount received is different from the total amount of your order. Please, contact us for information regarding this order.';
+            $admin_note     = 'Attention: New order has been placed on hold because of incorrect payment amount. Please, look into it. <br>';
+            $admin_note    .= "Amount paid: $charged_amount <br> Order amount: $order_amount <br> Reference: $txn_ref";
+
+            $order->add_order_note( $customer_note, 1 );
+            $order->add_order_note( $admin_note );
+
+            wc_add_notice( $customer_note, 'notice' );
+
+          } else {
+
+            $order->payment_complete( $order_id );
+            $order->add_order_note( "Payment processed and approved successfully with reference: $txn_ref" );
+
+          }
+
+          WC()->cart->empty_cart();
+
+        } else {
+
+          $order->update_status( 'failed', 'Payment not successful' );
+
+        }
+        $redirect_url = $this->get_return_url( $order );
+        echo json_encode( array( 'redirect_url' => $redirect_url ) );
+      }
+
+      die();
     }
 
   }
