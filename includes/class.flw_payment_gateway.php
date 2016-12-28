@@ -150,7 +150,7 @@
 
       if ( ! is_checkout_pay_page() ) return;
 
-      wp_enqueue_script( 'flwpbf_inline_js', 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com/flwv3-pug/getpaid/api/flwpbf-inline.js', array(), '1.0.0', true );
+      wp_enqueue_script( 'flwpbf_inline_js', '//flw-pms-dev.eu-west-1.elasticbeanstalk.com/flwv3-pug/getpaid/api/flwpbf-inline.js', array(), '1.0.0', true );
       wp_enqueue_script( 'flw_js', plugins_url( 'assets/js/flw.js', FLW_WC_PLUGIN_FILE ), array( 'flwpbf_inline_js' ), '1.0.0', true );
 
       $payment_args = array(
