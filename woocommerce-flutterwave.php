@@ -24,7 +24,7 @@ function flw_woocommerce_flutterwave_init() {
 
   if ( !class_exists( 'WC_Payment_Gateway' ) ) return;
 
-  require_once( FLW_WC_DIR_PATH . 'includes/class.flw_payment_gateway.php' );
+  require_once( FLW_WC_DIR_PATH . 'includes/class.flw_wc_payment_gateway.php' );
 
   /**
    * Add the Gateway to WooCommerce
