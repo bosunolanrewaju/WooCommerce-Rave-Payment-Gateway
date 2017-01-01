@@ -30,7 +30,7 @@ var processPayment = function() {
     PBFPubKey: p_key,
     onclose: function(){
       if (redirect_url) {
-        location.href = redirect_url;
+        redirectTo( redirect_url );
       }
     },
     callback: function(d){
@@ -46,5 +46,10 @@ var sendPaymentRequestResponse = function( res ) {
     .success( function(data) {
       var response = JSON.parse( data );
       redirect_url = response.redirect_url;
+      setTimeout( redirectTo, 5000, redirect_url );
     } );
+};
+
+var redirectTo = function( url ) {
+  location.href = url;
 };
