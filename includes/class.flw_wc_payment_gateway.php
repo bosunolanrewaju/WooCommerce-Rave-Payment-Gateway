@@ -162,7 +162,7 @@
         $order_key = urldecode( $_REQUEST['key'] );
         $order_id  = absint( get_query_var( 'order-pay' ) );
         $order     = wc_get_order( $order_id );
-        $txnref    = $order_id . '_' . time();
+        $txnref    = "WOOC_" . $order_id . '_' . time();
         $amount    = $order->order_total;
         $email     = $order->billing_email;
 
@@ -194,7 +194,7 @@
       if ( isset( $_POST['txRef'] ) ) {
         $response_code = ( $_POST['paymentType'] === 'account' ) ? $_POST['acctvalrespcode'] : $_POST['vbvrespcode'];
           $txn_ref = $_POST['txRef'];
-          $order_id = intval( explode( '_', $txn_ref )[0] );
+          $order_id = intval( explode( '_', $txn_ref )[1] );
           $order = wc_get_order( $order_id );
           $order_currency = $order->get_order_currency();
 
