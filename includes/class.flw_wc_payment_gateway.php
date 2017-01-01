@@ -201,7 +201,7 @@
         if ( $response_code == '00' ) {
 
           $order_amount = $order->get_total();
-          $charged_amount  = $_POST['charged_amount'];
+          $charged_amount  = $_POST['amount'];
 
           if ( $charged_amount != $order_amount ) {
 
