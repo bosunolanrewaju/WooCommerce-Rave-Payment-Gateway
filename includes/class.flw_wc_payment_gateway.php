@@ -3,7 +3,7 @@
   if( ! defined( 'ABSPATH' ) ) { exit; }
 
   /**
-   * Main Flutterwave Gateway Class
+   * Main Rave Gateway Class
    */
   class FLW_WC_Payment_Gateway extends WC_Payment_Gateway {
 
@@ -14,11 +14,11 @@
      */
     public function __construct() {
 
-      $this->id = 'flutterwave';
+      $this->id = 'rave';
       $this->icon = null;
       $this->has_fields         = false;
-      $this->method_title       = __( 'Flutterwave Pay', 'flw-payments' );
-      $this->method_description = __( 'Flutterwave Payment Gateway', 'flw-payments' );
+      $this->method_title       = __( 'Rave', 'flw-payments' );
+      $this->method_description = __( 'Rave Payment Gateway', 'flw-payments' );
       $this->supports           = array(
         'products',
       );
@@ -53,16 +53,16 @@
 
         'enabled' => array(
           'title'       => __( 'Enable/Disable', 'flw-payments' ),
-          'label'       => __( 'Enable Flutterwave Express Checkout', 'flw-payments' ),
+          'label'       => __( 'Enable Rave Payment Gateway', 'flw-payments' ),
           'type'        => 'checkbox',
-          'description' => __( 'Enable Flutterwave Express Checkout as a payment option on the checkout page', 'flw-payments' ),
+          'description' => __( 'Enable Rave Payment Gateway as a payment option on the checkout page', 'flw-payments' ),
           'default'     => 'no',
           'desc_tip'    => true
         ),
         'public_key' => array(
-          'title'       => __( 'Integration Public Key', 'flw-payments' ),
+          'title'       => __( 'Pay Button Public Key', 'flw-payments' ),
           'type'        => 'text',
-          'description' => __( 'Required! Enter your integration public key here', 'flw-payments' ),
+          'description' => __( 'Required! Enter your Pay Button public key here', 'flw-payments' ),
           'default'     => ''
         ),
         'modal_title' => array(
@@ -116,8 +116,8 @@
 
         echo '<div class="error"><p>';
         echo sprintf(
-          'Provide your Flutterwave integration public key <a href="%s">here</a> to be able to use the WooCommerce Flutterwave Express Checkout plugin.',
-           admin_url( 'admin.php?page=wc-settings&tab=checkout&section=flutterwave' )
+          'Provide your Rave "Pay Button" public key <a href="%s">here</a> to be able to use the WooCommerce Rave Payment Gateway plugin.',
+           admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rave' )
          );
         echo '</p></div>';
         return;
@@ -134,7 +134,7 @@
 
       $order = wc_get_order( $order );
 
-      echo '<p>'.__( 'Thank you for your order, please click the button below to pay with Flutterwave Express Checkout.', 'flw-payments' ).'</p>';
+      echo '<p>'.__( 'Thank you for your order, please click the button below to pay with Rave.', 'flw-payments' ).'</p>';
       echo '<button class="button alt" id="flw-pay-now-button">Pay Now</button> ';
       echo '<a class="button cancel" href="' . esc_url( $order->get_cancel_order_url() ) . '">';
       echo __( 'Cancel order &amp; restore cart', 'flw-payments' ) . '</a>';

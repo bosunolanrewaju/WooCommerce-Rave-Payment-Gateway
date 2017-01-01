@@ -1,8 +1,8 @@
 <?php
 /*
-Plugin Name: WooCommerce Flutterwave Express Checkout Gateway
+Plugin Name: WooCommerce Rave Payment Gateway
 Plugin URI: http://flutterwave.com/
-Description: WooCommerce payment gateway for Flutterwave Express Checkout.
+Description: WooCommerce payment gateway for Rave.
 Version: 0.0.1
 Author: Bosun Olanrewaju
 Author URI: http://twitter.com/bosunolanrewaju
@@ -18,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'FLW_WC_PLUGIN_FILE', __FILE__ );
 define( 'FLW_WC_DIR_PATH', plugin_dir_path( FLW_WC_PLUGIN_FILE ) );
 
-add_action('plugins_loaded', 'flw_woocommerce_flutterwave_init', 0);
+add_action('plugins_loaded', 'flw_woocommerce_rave_init', 0);
 
-function flw_woocommerce_flutterwave_init() {
+function flw_woocommerce_rave_init() {
 
   if ( !class_exists( 'WC_Payment_Gateway' ) ) return;
 
@@ -33,12 +33,12 @@ function flw_woocommerce_flutterwave_init() {
    *
    * @return Array          Gateway list with our gateway added
    */
-  function flw_woocommerce_add_flutterwave_gateway($methods) {
+  function flw_woocommerce_add_rave_gateway($methods) {
 
     $methods[] = 'FLW_WC_Payment_Gateway';
     return $methods;
 
   }
 
-  add_filter('woocommerce_payment_gateways', 'flw_woocommerce_add_flutterwave_gateway' );
+  add_filter('woocommerce_payment_gateways', 'flw_woocommerce_add_rave_gateway' );
 }
