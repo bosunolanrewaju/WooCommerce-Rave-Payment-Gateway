@@ -14,6 +14,7 @@
      */
     public function __construct() {
 
+      $this->base_url = '//flw-pms-dev.eu-west-1.elasticbeanstalk.com';
       $this->id = 'rave';
       $this->icon = null;
       $this->has_fields         = false;
@@ -30,6 +31,7 @@
       $this->description  = __( 'Pay with your bank account or credit/debit card', 'flw-payments' );
       $this->enabled      = $this->get_option( 'enabled' );
       $this->public_key   = $this->get_option( 'public_key' );
+      $this->go_live      = $this->get_option( 'go_live' );
 
       add_action( 'admin_notices', array( $this, 'admin_notices' ) );
       add_action( 'woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
@@ -37,6 +39,10 @@
 
       if ( is_admin() ) {
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+      }
+
+      if ( 'yes' === $this->go_live ) {
+        $this->base_url = '//api.ravepay.co';
       }
 
       $this->load_scripts();
@@ -60,10 +66,24 @@
           'desc_tip'    => true
         ),
         'public_key' => array(
-          'title'       => __( 'Pay Button Public Key', 'flw-payments' ),
+          'title'       => __( 'Rave Checkout Public Key', 'flw-payments' ),
           'type'        => 'text',
-          'description' => __( 'Required! Enter your Pay Button public key here', 'flw-payments' ),
+          'description' => __( 'Required! Enter your Rave Checkout public key here', 'flw-payments' ),
           'default'     => ''
+        ),
+        'secret_key' => array(
+          'title'       => __( 'Rave Checkout Secret Key', 'flw-payments' ),
+          'type'        => 'text',
+          'description' => __( 'Required! Enter your Rave Checkout secret key here', 'flw-payments' ),
+          'default'     => ''
+        ),
+        'go_live' => array(
+          'title'       => __( 'Go Live', 'flw-payments' ),
+          'label'       => __( 'Switch to live account', 'flw-payments' ),
+          'type'        => 'checkbox',
+          'description' => __( 'Ensure that you are using a public key and secret key generated from the live account.', 'flw-payments' ),
+          'default'     => 'no',
+          'desc_tip'    => true
         ),
         'modal_title' => array(
           'title'       => __( 'Modal Title', 'flw-payments' ),
@@ -150,7 +170,7 @@
 
       if ( ! is_checkout_pay_page() ) return;
 
-      wp_enqueue_script( 'flwpbf_inline_js', '//flw-pms-dev.eu-west-1.elasticbeanstalk.com/flwv3-pug/getpaidx/api/flwpbf-inline.js', array(), '1.0.0', true );
+      wp_enqueue_script( 'flwpbf_inline_js', $this->base_url . '/flwv3-pug/getpaidx/api/flwpbf-inline.js', array(), '1.0.0', true );
       wp_enqueue_script( 'flw_js', plugins_url( 'assets/js/flw.js', FLW_WC_PLUGIN_FILE ), array( 'flwpbf_inline_js' ), '1.0.0', true );
 
       $payment_args = array(
@@ -194,7 +214,8 @@
       if ( isset( $_POST['txRef'] ) ) {
         $response_code = ( $_POST['paymentType'] === 'account' ) ? $_POST['acctvalrespcode'] : $_POST['vbvrespcode'];
           $txn_ref = $_POST['txRef'];
-          $order_id = intval( explode( '_', $txn_ref )[1] );
+          $o = explode( '_', $txn_ref );
+          $order_id = intval( $o[1] );
           $order = wc_get_order( $order_id );
           $order_currency = $order->get_order_currency();
 
