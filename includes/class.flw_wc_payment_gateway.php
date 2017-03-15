@@ -14,13 +14,13 @@
      */
     public function __construct() {
 
-      $this->base_url = '//flw-pms-dev.eu-west-1.elasticbeanstalk.com';
+      $this->base_url = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com';
       $this->id = 'rave';
       $this->icon = null;
       $this->has_fields         = false;
       $this->method_title       = __( 'Rave', 'flw-payments' );
       $this->method_description = __( 'Rave Payment Gateway', 'flw-payments' );
-      $this->supports           = array(
+      $this->supports = array(
         'products',
       );
 
@@ -31,6 +31,7 @@
       $this->description  = __( 'Pay with your bank account or credit/debit card', 'flw-payments' );
       $this->enabled      = $this->get_option( 'enabled' );
       $this->public_key   = $this->get_option( 'public_key' );
+      $this->secret_key   = $this->get_option( 'secret_key' );
       $this->go_live      = $this->get_option( 'go_live' );
 
       add_action( 'admin_notices', array( $this, 'admin_notices' ) );
@@ -42,10 +43,11 @@
       }
 
       if ( 'yes' === $this->go_live ) {
-        $this->base_url = '//api.ravepay.co';
+        $this->base_url = 'https://api.ravepay.co';
       }
 
       $this->load_scripts();
+
     }
 
     /**
@@ -132,11 +134,11 @@
       /**
        * Check if public key is provided
        */
-      if ( ! ( $this->public_key ) ) {
+      if ( ! $this->public_key || ! $this->secret_key ) {
 
         echo '<div class="error"><p>';
         echo sprintf(
-          'Provide your Rave "Pay Button" public key <a href="%s">here</a> to be able to use the WooCommerce Rave Payment Gateway plugin.',
+          'Provide your Rave "Pay Button" public key and secret key <a href="%s">here</a> to be able to use the WooCommerce Rave Payment Gateway plugin.',
            admin_url( 'admin.php?page=wc-settings&tab=checkout&section=rave' )
          );
         echo '</p></div>';
@@ -173,9 +175,7 @@
       wp_enqueue_script( 'flwpbf_inline_js', $this->base_url . '/flwv3-pug/getpaidx/api/flwpbf-inline.js', array(), '1.0.0', true );
       wp_enqueue_script( 'flw_js', plugins_url( 'assets/js/flw.js', FLW_WC_PLUGIN_FILE ), array( 'flwpbf_inline_js' ), '1.0.0', true );
 
-      $payment_args = array(
-        'p_key' => $this->public_key
-      );
+      $p_key = $this->public_key;
 
       if ( get_query_var( 'order-pay' ) ) {
 
@@ -185,14 +185,13 @@
         $txnref    = "WOOC_" . $order_id . '_' . time();
         $amount    = $order->order_total;
         $email     = $order->billing_email;
+        $currency  = get_option('woocommerce_currency');
 
         if ( $order->order_key == $order_key ) {
 
-          $payment_args['amount'] = $amount;
+          $payment_args = compact( 'amount', 'email', 'txnref', 'p_key', 'currency' );
           $payment_args['cb_url'] = WC()->api_request_url( 'FLW_WC_Payment_Gateway' );
           $payment_args['desc']   = $this->get_option( 'modal_description' );
-          $payment_args['email']  = $email;
-          $payment_args['txnref'] = $txnref;
           $payment_args['title']  = $this->get_option( 'modal_title' );
 
         }
@@ -211,15 +210,17 @@
      * @return void
      */
     public function flw_verify_payment() {
-      if ( isset( $_POST['txRef'] ) ) {
-        $response_code = ( $_POST['paymentType'] === 'account' ) ? $_POST['acctvalrespcode'] : $_POST['vbvrespcode'];
-          $txn_ref = $_POST['txRef'];
-          $o = explode( '_', $txn_ref );
-          $order_id = intval( $o[1] );
-          $order = wc_get_order( $order_id );
-          $order_currency = $order->get_order_currency();
 
-        if ( $response_code == '00' ) {
+      if ( isset( $_POST['txRef'] ) ) {
+
+        $txn_ref = $_POST['txRef'];
+        $o = explode( '_', $txn_ref );
+        $order_id = intval( $o[1] );
+        $order = wc_get_order( $order_id );
+        $order_currency = $order->get_order_currency();
+        $txn = json_decode( $this->_fetchTransaction($txn_ref, $this->secret_key) );
+
+        if ( ! empty($txn->data) && $txn->data->status === 'successful' ) {
 
           $order_amount = $order->get_total();
           $charged_amount  = $_POST['amount'];
@@ -252,11 +253,36 @@
           $order->update_status( 'failed', 'Payment not successful' );
 
         }
+
         $redirect_url = $this->get_return_url( $order );
         echo json_encode( array( 'redirect_url' => $redirect_url ) );
+
       }
 
       die();
+
+    }
+
+   /**
+     * Fetches transaction from rave enpoint
+     *
+     * @param $tx_ref string the transaction to fetch
+     * @param $secret_key string the api secret key
+     *
+     * @return string
+     */
+    private function _fetchTransaction( $tx_ref, $secret_key ) {
+
+      $url = $this->base_url . "/tx/verify?tx_ref=$tx_ref&seckey=$secret_key";
+      $response = wp_remote_get( $url );
+      $result = wp_remote_retrieve_response_code( $response );
+
+      if( $result === 200 ){
+        return wp_remote_retrieve_body( $response );
+      }
+
+      return '';
+
     }
 
   }

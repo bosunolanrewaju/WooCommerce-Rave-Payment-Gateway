@@ -2,6 +2,7 @@
 
 var amount = flw_payment_args.amount,
     cbUrl  = flw_payment_args.cb_url,
+    curr   = flw_payment_args.currency,
     desc   = flw_payment_args.desc,
     email  = flw_payment_args.email,
     form   = jQuery( '#flw-pay-now-button' ),
@@ -23,6 +24,7 @@ var processPayment = function() {
 
   getpaidSetup({
     amount: amount,
+    currency: curr,
     custom_description: desc,
     custom_title: title,
     customer_email: email,
