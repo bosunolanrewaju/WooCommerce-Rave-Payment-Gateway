@@ -173,7 +173,7 @@
       if ( ! is_checkout_pay_page() ) return;
 
       wp_enqueue_script( 'flwpbf_inline_js', $this->base_url . '/flwv3-pug/getpaidx/api/flwpbf-inline.js', array(), '1.0.0', true );
-      wp_enqueue_script( 'flw_js', plugins_url( 'assets/js/flw.js', FLW_WC_PLUGIN_FILE ), array( 'flwpbf_inline_js' ), '1.0.0', true );
+      wp_enqueue_script( 'flw_js', plugins_url( 'assets/js/flw.js', FLW_WC_PLUGIN_FILE ), array( 'jquery', 'flwpbf_inline_js' ), '1.0.0', true );
 
       $p_key = $this->public_key;
 
@@ -186,10 +186,11 @@
         $amount    = $order->order_total;
         $email     = $order->billing_email;
         $currency  = get_option('woocommerce_currency');
+        $country  = get_option('woocommerce_default_country');
 
         if ( $order->order_key == $order_key ) {
 
-          $payment_args = compact( 'amount', 'email', 'txnref', 'p_key', 'currency' );
+          $payment_args = compact( 'amount', 'email', 'txnref', 'p_key', 'currency', 'country' );
           $payment_args['cb_url'] = WC()->api_request_url( 'FLW_WC_Payment_Gateway' );
           $payment_args['desc']   = $this->get_option( 'modal_description' );
           $payment_args['title']  = $this->get_option( 'modal_title' );

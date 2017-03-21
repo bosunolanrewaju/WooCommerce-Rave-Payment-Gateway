@@ -2,6 +2,7 @@
 
 var amount = flw_payment_args.amount,
     cbUrl  = flw_payment_args.cb_url,
+    country = flw_payment_args.country,
     curr   = flw_payment_args.currency,
     desc   = flw_payment_args.desc,
     email  = flw_payment_args.email,
@@ -24,6 +25,7 @@ var processPayment = function() {
 
   getpaidSetup({
     amount: amount,
+    country: country,
     currency: curr,
     custom_description: desc,
     custom_title: title,
