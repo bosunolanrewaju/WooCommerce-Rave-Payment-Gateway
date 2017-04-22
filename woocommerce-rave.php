@@ -26,6 +26,26 @@ function flw_woocommerce_rave_init() {
 
   require_once( FLW_WC_DIR_PATH . 'includes/class.flw_wc_payment_gateway.php' );
 
+  add_filter('woocommerce_payment_gateways', 'flw_woocommerce_add_rave_gateway' );
+
+  /**
+   * Add the Settings link to the plugin
+   *
+   * @param  Array $links Existing links on the plugin page
+   *
+   * @return Array          Existing links with our settings link added
+   */
+  function flw_plugin_action_links( $links ) {
+
+    $rave_settings_url = esc_url( get_admin_url( null, 'admin.php?page=wc-settings&tab=checkout&section=rave' ) );
+    array_unshift( $links, "<a title='Rave Settings Page' href='$rave_settings_url'>Settings</a>" );
+
+    return $links;
+
+  }
+
+  add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), 'flw_plugin_action_links' );
+
   /**
    * Add the Gateway to WooCommerce
    *
@@ -39,6 +59,4 @@ function flw_woocommerce_rave_init() {
     return $methods;
 
   }
-
-  add_filter('woocommerce_payment_gateways', 'flw_woocommerce_add_rave_gateway' );
 }
