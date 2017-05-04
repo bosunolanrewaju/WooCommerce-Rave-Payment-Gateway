@@ -14,7 +14,7 @@
      */
     public function __construct() {
 
-      $this->base_url = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com';
+      $this->base_url = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com/';
       $this->id = 'rave';
       $this->icon = null;
       $this->has_fields         = false;
@@ -43,7 +43,7 @@
       }
 
       if ( 'yes' === $this->go_live ) {
-        $this->base_url = 'https://api.ravepay.co';
+        $this->base_url = 'https://api.ravepay.co/';
       }
 
       $this->load_scripts();
@@ -219,7 +219,7 @@
         $order_id = intval( $o[1] );
         $order = wc_get_order( $order_id );
         $order_currency = $order->get_order_currency();
-        $txn = json_decode( $this->_fetchTransaction( $tx_ref ) );
+        $txn = json_decode( $this->_fetchTransaction( $_POST['flwRef'] ) );
 
         if ( ! empty($txn->data) && $this->_is_successful( $txn->data ) ) {
 
@@ -271,12 +271,12 @@
      *
      * @return string
      */
-    private function _fetchTransaction( $tx_ref ) {
+    private function _fetchTransaction( $flw_ref ) {
 
-      $url = $this->api_base_url . 'flwv3-pug/getpaidx/api/verify';
+      $url = $this->base_url . 'flwv3-pug/getpaidx/api/verify';
       $args = array(
         'body' => array(
-          'tx_ref' => $tx_ref,
+          'flw_ref' => $flw_ref,
           'SECKEY' => $this->secret_key ),
         'sslverify' => false
       );
