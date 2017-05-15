@@ -14,7 +14,7 @@
      */
     public function __construct() {
 
-      $this->base_url = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com';
+      $this->base_url = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com/';
       $this->id = 'rave';
       $this->icon = null;
       $this->has_fields         = false;
@@ -43,7 +43,7 @@
       }
 
       if ( 'yes' === $this->go_live ) {
-        $this->base_url = 'https://api.ravepay.co';
+        $this->base_url = 'https://api.ravepay.co/';
       }
 
       $this->load_scripts();
@@ -219,9 +219,9 @@
         $order_id = intval( $o[1] );
         $order = wc_get_order( $order_id );
         $order_currency = $order->get_order_currency();
-        $txn = json_decode( $this->_fetchTransaction($txn_ref, $this->secret_key) );
+        $txn = json_decode( $this->_fetchTransaction( $_POST['flwRef'] ) );
 
-        if ( ! empty($txn->data) && $txn->data->status === 'successful' ) {
+        if ( ! empty($txn->data) && $this->_is_successful( $txn->data ) ) {
 
           $order_amount = $order->get_total();
           $charged_amount  = $_POST['amount'];
@@ -268,22 +268,39 @@
      * Fetches transaction from rave enpoint
      *
      * @param $tx_ref string the transaction to fetch
-     * @param $secret_key string the api secret key
      *
      * @return string
      */
-    private function _fetchTransaction( $tx_ref, $secret_key ) {
+    private function _fetchTransaction( $flw_ref ) {
 
-      $url = $this->base_url . "/tx/verify?tx_ref=$tx_ref&seckey=$secret_key";
-      $response = wp_remote_get( $url );
+      $url = $this->base_url . 'flwv3-pug/getpaidx/api/verify';
+      $args = array(
+        'body' => array(
+          'flw_ref' => $flw_ref,
+          'SECKEY' => $this->secret_key ),
+        'sslverify' => false
+      );
+
+      $response = wp_remote_post( $url, $args );
       $result = wp_remote_retrieve_response_code( $response );
 
       if( $result === 200 ){
         return wp_remote_retrieve_body( $response );
       }
 
-      return '';
+      return $result;
 
+    }
+
+    /**
+     * Checks if payment is successful
+     *
+     * @param $data object the transaction object to do the check on
+     *
+     * @return boolean
+     */
+    private function _is_successful($data) {
+      return $data->flwMeta->chargeResponse === '00' || $data->flwMeta->chargeResponse === '0';
     }
 
   }
