@@ -14,7 +14,7 @@
      */
     public function __construct() {
 
-      $this->base_url = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com/';
+      $this->base_url = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com';
       $this->id = 'rave';
       $this->icon = null;
       $this->has_fields         = false;
@@ -43,7 +43,7 @@
       }
 
       if ( 'yes' === $this->go_live ) {
-        $this->base_url = 'https://api.ravepay.co/';
+        $this->base_url = 'https://api.ravepay.co';
       }
 
       $this->load_scripts();
@@ -273,7 +273,7 @@
      */
     private function _fetchTransaction( $flw_ref ) {
 
-      $url = $this->base_url . 'flwv3-pug/getpaidx/api/verify';
+      $url = $this->base_url . '/flwv3-pug/getpaidx/api/verify';
       $args = array(
         'body' => array(
           'flw_ref' => $flw_ref,
