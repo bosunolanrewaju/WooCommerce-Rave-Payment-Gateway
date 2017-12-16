@@ -6,6 +6,7 @@
    * Main Rave Gateway Class
    */
   class FLW_WC_Payment_Gateway extends WC_Payment_Gateway {
+    private $retries;
 
     /**
      * Constructor
@@ -14,6 +15,7 @@
      */
     public function __construct() {
 
+      $this->retries = 3;
       $this->base_url = 'https://rave-api-v2.herokuapp.com';
       $this->id = 'rave';
       $this->icon = null;
@@ -309,7 +311,8 @@
         'body' => array(
           'flw_ref' => $flw_ref,
           'SECKEY' => $this->secret_key ),
-        'sslverify' => false
+        'sslverify' => false,
+        'timeout' => 30
       );
 
       $response = wp_remote_post( $url, $args );
@@ -317,6 +320,11 @@
 
       if( $result === 200 ){
         return wp_remote_retrieve_body( $response );
+      } else {
+        if ($this->retries > 0) {
+          $this->retries--;
+          return $this->_fetchTransaction( $flw_ref );
+        }
       }
 
       return $result;
