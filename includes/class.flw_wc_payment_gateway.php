@@ -227,7 +227,7 @@
           $payment_args['cb_url'] = WC()->api_request_url( 'FLW_WC_Payment_Gateway' );
           $payment_args['desc']   = $this->get_option( 'modal_description' );
           $payment_args['title']  = $this->get_option( 'modal_title' );
-          $payment_args['logo'] = $this->get_options( 'modal_logo' );
+          $payment_args['logo'] = $this->get_option( 'modal_logo' );
         }
 
         update_post_meta( $order_id, '_flw_payment_txn_ref', $txnref );
